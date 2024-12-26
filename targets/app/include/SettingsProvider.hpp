@@ -1,4 +1,9 @@
 #ifndef CARCLOCK_FW_TARGETS_APP_INCLUDE_SETTINGSPROVIDER_HPP
 #define CARCLOCK_FW_TARGETS_APP_INCLUDE_SETTINGSPROVIDER_HPP
 
+class SettingsProvider {
+  public:
+    bool init() const noexcept { return true; }
+};
+
 #endif    // CARINFOTAINMENTSYSTEM_FW_APP_INCLUDE_SETTINGSPROVIDER_H

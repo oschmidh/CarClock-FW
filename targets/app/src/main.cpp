@@ -1,4 +1,15 @@
+#include "AppLauncher.hpp"
+#include "HomeScreen.hpp"
+#include "Settings.hpp"
 
+#include "ProviderManager.hpp"
+#include "SettingsProvider.hpp"
+#include "TemperatureProvider.hpp"
+#include "TimeProvider.hpp"
+
+#include "Display.hpp"
+
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
@@ -9,30 +20,26 @@ LOG_MODULE_REGISTER(app, CONFIG_LOG_DEFAULT_LEVEL);
 
 int main()
 {
-
     using ProviderList = std::tuple<SettingsProvider, TemperatureProvider, TimeProvider>;
-    ProviderList providers;
+    ProviderManager<ProviderList> providers;
 
     providers.init();
 
-    using AppList = std::tuple<Homescreen, Settings>;
-    AppLauncher<AppList> launcher(providers);
-
-    static constexpr const device* const dispDev = DEVICE_DT_GET(DT_ALIAS(display));
-    if (!device_is_ready(display_dev)) {
-        LOG_ERR("Display not ready");
-        return -ENODEV;
-    }
+    static constexpr const device* const dispDev = DEVICE_DT_GET(DT_CHOSEN(display));
     Display display(dispDev);
     display.init();
 
-    bootAnimation(display);
+    // using AppList = std::tuple<App::HomeScreen, App::Settings>;
+    using LauncherType = AppLauncher<Display, ProviderManager<ProviderList>, App::HomeScreen, App::Settings>;
+    LauncherType launcher(display, providers);
 
-    launcher.run(display);
+    // bootAnimation(display); // TODO implement
+
+    launcher.run();
 
     while (1) {
-        display.update();
-        k_msleep(K_MSEC(10));
+        display.update();    // TODO move to UI thread
+        k_sleep(K_MSEC(10));
     }
 
     return 0;
