@@ -7,9 +7,10 @@
 
 namespace App {
 
+template <typename DISPLAY_T>
 class HomeScreen {
   public:
-    HomeScreen(Display& disp, const TimeProvider& time) noexcept
+    HomeScreen(DISPLAY_T& disp, const TimeProvider& time) noexcept
      : _display(disp)
      , _time(time)
     {
@@ -21,18 +22,24 @@ class HomeScreen {
         // _display.clear();
     }
 
+    template <typename PROVIDER_MANAGER_T>
+    static HomeScreen<DISPLAY_T> create(DISPLAY_T& display, PROVIDER_MANAGER_T& providers) noexcept
+    {
+        return HomeScreen(display, providers.template get<TimeProvider>());
+    }
+
     void run() noexcept
     {
         const auto time = _time.getTime();
-        _display.draw(time);
-        _display.write();
-        k_msleep(K_MSEC(1000));
+        // _display.draw(time); // TODO implement
+        _display.update();
+        k_sleep(K_MSEC(1000));
     }
 
     // void onEvent() noexcept{}   // TODO
 
   private:
-    Display& _display;
+    DISPLAY_T& _display;
     const TimeProvider& _time;
 };
 

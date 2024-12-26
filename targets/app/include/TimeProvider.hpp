@@ -5,6 +5,7 @@ struct Time { };
 
 class TimeProvider {
   public:
+    bool init() const noexcept { return true; }
     Time getTime() const noexcept { return {}; }
 
   private:
