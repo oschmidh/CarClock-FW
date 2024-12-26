@@ -8,6 +8,8 @@ manifest:
   remotes:
     - name: zephyrproject-rtos
       url-base: https://github.com/zephyrproject-rtos
+    - name: pigweed
+      url-base: https://pigweed.googlesource.com/pigweed
 
   projects:
     - name: zephyr
@@ -17,3 +19,8 @@ manifest:
         name-allowlist:
           - cmsis
           - hal_stm32
+
+    - name: pigweed
+      remote: pigweed
+      revision: main
+      path: modules/pigweed
