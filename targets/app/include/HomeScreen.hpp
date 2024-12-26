@@ -5,6 +5,8 @@
 
 #include <zephyr/kernel.h>
 
+#include <chrono>
+
 namespace App {
 
 template <typename DISPLAY_T>
@@ -28,12 +30,12 @@ class HomeScreen {
         return HomeScreen(display, providers.template get<TimeProvider>());
     }
 
-    void run() noexcept
+    auto run() noexcept -> std::optional<std::chrono::milliseconds>
     {
         const auto time = _time.getTime();
         // _display.draw(time); // TODO implement
         _display.update();
-        k_sleep(K_MSEC(1000));
+        return std::chrono::milliseconds(1000);
     }
 
     // void onEvent() noexcept{}   // TODO
