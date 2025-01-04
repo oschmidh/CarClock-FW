@@ -1,6 +1,7 @@
 #ifndef CARINFOTAINMENTSYSTEM_FW_APP_INCLUDE_HOMESCREEN_H
 #define CARINFOTAINMENTSYSTEM_FW_APP_INCLUDE_HOMESCREEN_H
 
+#include "AppBase.hpp"
 #include "TimeProvider.hpp"
 
 #include <zephyr/kernel.h>
@@ -9,7 +10,7 @@
 
 namespace App {
 
-class HomeScreen {
+class HomeScreen : public AppBase {
   public:
     HomeScreen(const TimeProvider& time) noexcept
      : _time(time)
