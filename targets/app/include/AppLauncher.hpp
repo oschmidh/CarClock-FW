@@ -12,8 +12,11 @@
 
 pw::thread::zephyr::StaticContextWithStack<512> threadContext;    // TODO define stackSize in kconfig
 
-template <typename DISPLAY_T, typename PROVIDER_MANAGER_T, template <typename> typename... APP_Ts>
-class AppLauncher {
+template <typename, typename, typename>
+class AppLauncher;
+
+template <typename... APP_Ts, typename DISPLAY_T, typename PROVIDER_MANAGER_T>
+class AppLauncher<std::tuple<APP_Ts...>, DISPLAY_T, PROVIDER_MANAGER_T> {
   public:
     AppLauncher(DISPLAY_T& display, PROVIDER_MANAGER_T& providers) noexcept
      : _display(display)
@@ -40,7 +43,7 @@ class AppLauncher {
             while (1) {
                 std::optional delay = std::chrono::milliseconds{};
                 do {
-                    delay = std::visit([](auto& app) { return app.run(); }, _apps);
+                    delay = std::visit([this](auto& app) { return app.run(_display); }, _apps);
                 } while (delay.has_value() && !_stop.try_acquire_for(delay.value()));
 
                 _exited.release();
@@ -56,8 +59,14 @@ class AppLauncher {
     pw::sync::BinarySemaphore _start{};
     pw::sync::BinarySemaphore _stop{};
     pw::sync::BinarySemaphore _exited{};
-    std::variant<APP_Ts<DISPLAY_T>...> _apps{
-        std::tuple_element_t<0, std::tuple<APP_Ts<DISPLAY_T>...>>::create(_display, _providers)};
+    std::variant<APP_Ts...> _apps{std::tuple_element_t<0, std::tuple<APP_Ts...>>::create(_display, _providers)};
 };
+
+template <typename APP_TUPLE_T, typename DISPLAY_T, typename PROVIDER_T>
+constexpr auto createAppLauncher(DISPLAY_T& disp,
+                                 PROVIDER_T& provider) noexcept -> AppLauncher<APP_TUPLE_T, DISPLAY_T, PROVIDER_T>
+{
+    return AppLauncher<APP_TUPLE_T, DISPLAY_T, PROVIDER_T>(disp, provider);
+}
 
 #endif    // CARINFOTAINMENTSYSTEM_FW_APP_INCLUDE_APPLAUNCHER_H

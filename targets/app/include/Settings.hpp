@@ -6,10 +6,12 @@
 
 namespace App {
 
-template <typename DISPLAY_T>
 class Settings {
   public:
-    auto run() const noexcept -> std::optional<std::chrono::milliseconds> { return std::nullopt; }
+    auto run([[maybe_unused]] auto& display) const noexcept -> std::optional<std::chrono::milliseconds>
+    {
+        return std::nullopt;
+    }
 };
 
 }    // namespace App

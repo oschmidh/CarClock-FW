@@ -29,9 +29,8 @@ int main()
     Display display(dispDev);
     display.init();
 
-    // using AppList = std::tuple<App::HomeScreen, App::Settings>;
-    using LauncherType = AppLauncher<Display, ProviderManager<ProviderList>, App::HomeScreen, App::Settings>;
-    LauncherType launcher(display, providers);
+    using AppList = std::tuple<App::HomeScreen, App::Settings>;
+    auto launcher = createAppLauncher<AppList>(display, providers);
 
     // bootAnimation(display); // TODO implement
 
