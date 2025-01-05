@@ -1,12 +1,40 @@
 #ifndef CARCLOCK_FW_TARGETS_APP_INCLUDE_DISPLAY_HPP
 #define CARCLOCK_FW_TARGETS_APP_INCLUDE_DISPLAY_HPP
 
-#include <zephyr/device.h>
+#include "Primitives.hpp"
 
+#include <zephyr/device.h>
+#include <zephyr/drivers/display.h>
+#include <zephyr/devicetree.h>
+
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+
+#define DT_DISPLAY_FRAMEBUF_DEFINE(name, nodeId) \
+    static FrameBuffer<DT_PROP(nodeId, width), DT_PROP(nodeId, height)> name { }
+
+template <std::size_t WIDTH_V, std::size_t HEIGHT_V>
+class FrameBuffer {
+  public:
+    std::uint8_t& operator[](std::size_t i) noexcept { return _buf[i]; }
+    std::uint8_t* data() noexcept { return _buf.data(); }
+    constexpr std::size_t size() const noexcept { return _buf.size(); }
+
+  private:
+    static_assert(!(HEIGHT_V % 8));
+    std::array<std::uint8_t, WIDTH_V * HEIGHT_V / 8> _buf{};
+};
+
+template <std::size_t WIDTH_V, std::size_t HEIGHT_V>
 class Display {
   public:
-    Display(const device* const dev) noexcept
-     : _dev(dev)
+    static constexpr std::size_t width = WIDTH_V;
+    static constexpr std::size_t height = HEIGHT_V;
+
+    Display(const device* const dev, FrameBuffer<WIDTH_V, HEIGHT_V>& frameBuf) noexcept
+     : _frameBuf(frameBuf)
+     , _dev(dev)
     { }
 
     bool init() noexcept
@@ -15,12 +43,181 @@ class Display {
             // LOG_ERR("Display not ready");
             return false;
         }
+
+        if (display_set_pixel_format(_dev, PIXEL_FORMAT_MONO10) != 0) {
+            // LOG_ERR("Failed to set required pixel format");  // TODO
+            return false;
+        }
+
+        display_blanking_off(_dev);
         return true;
     }
 
-    void update() noexcept { }
+    template <typename FONT_T>    // TODO get rid of template
+    void draw(std::string_view text, Point pos, const FONT_T& font) noexcept
+    {
+        for (char c : text) {
+            draw(font.getBitmap(c), pos);
+            pos.x += font.width + font.kerning;
+        }
+    }
+
+    void draw(const Line& line, unsigned int thickness) noexcept
+    {
+        // Bresenham-algorithm, https://de.wikipedia.org/wiki/Bresenham-Algorithmus
+        Point p = line.begin;
+
+        const int dx = std::abs(line.end.x - line.begin.x);
+        const int dy = -std::abs(line.end.y - line.begin.y);
+        const int sx = line.begin.x < line.end.x ? 1 : -1;
+        const int sy = line.begin.y < line.end.y ? 1 : -1;
+        int err = dx + dy;
+
+        while (1) {
+            draw(p);
+            if (p == line.end) {
+                return;
+            }
+
+            const int e2 = 2 * err;
+            if (e2 > dy) {
+                err += dy;
+                p.x += sx;
+            }
+
+            if (e2 < dx) {
+                err += dx;
+                p.y += sy;
+            }
+        }
+    }
+
+    void draw(const Point& point) noexcept
+    {
+        const std::uint8_t mask = 1 << point.y % 8u;
+        const unsigned int idx = point.y / 8 * width + point.x;
+        _frameBuf[idx] |= mask;
+    }
+
+    void drawHLine(const Point& begin, unsigned int length, unsigned int thickness) noexcept
+    {
+        for (unsigned int i = 0; i < thickness; ++i) {
+            drawHLine({begin.x, begin.y + static_cast<int>(i)}, length);    // TODO brute-force solution...
+        }
+    }
+
+    void drawVLine(const Point& begin, unsigned int length, unsigned int thickness) noexcept
+    {    // TODO only valid in horizontal addressing mode?
+        // TODO implement thickness
+
+        unsigned int idx = begin.y / 8 * width + begin.x;
+        const unsigned int bit = begin.y % 8u;    // TODO assumes that width % 8 == 0; ?
+
+        if (bit != 0) {
+            std::uint8_t mask{};
+            for (unsigned int i = 0; i < std::min(length, 8u); ++i) {
+                mask |= 1 << (bit + i);
+            }
+            _frameBuf[idx] |= mask;
+            idx += width;
+        }
+
+        while (length >= 8) {
+            _frameBuf[idx] |= 0xff;
+            idx += width;
+            length -= 8;
+        }
+
+        std::uint8_t mask{};
+        for (unsigned int i = 0; i < length; ++i) {
+            mask |= 1 << i;
+        }
+        _frameBuf[idx] |= mask;
+    }
+
+    // template <typename T>
+    // void draw(const T& bmp, std::size_t x, std::size_t y) noexcept requires {}
+
+    template <int W_V, int H_V>
+    void draw(const Bitmap<W_V, H_V>& bmp, Point pos) noexcept
+    {
+        // unsigned int height = H_V;
+        int bmpIndex = 0;
+
+        // for (unsigned int y = 0; y < H_V; ++y) {
+        // int y = pos.y;
+        const int yPos = pos.y / 8;
+        int yLineOffset = 0;
+        int yBitOffset = pos.y % 8u;
+        const int bitAlignOffset = pos.y % 8u;
+
+        // if (yBitOffset == 0) {
+        while ((yLineOffset * 8 + yBitOffset) <= bmp.height) {
+
+            unsigned int fbIdx = (yPos + yLineOffset) * width + pos.x;
+            const unsigned int maskHeight = std::min(bitAlignOffset + bmp.height - yLineOffset * 8, 8) - yBitOffset;
+            // const unsigned int maskHeight = std::min(bmp.height - yLineOffset * 8, 8);
+            const std::uint8_t mask = (2 << (maskHeight - 1)) - 1;
+
+            for (unsigned int x = 0; x < bmp.width; ++x) {
+                std::uint8_t byte = bmp.data[bmpIndex] << bitAlignOffset;
+                // if (bitAlignOffset != 0) {
+                // byte << bitAlignOffset;
+                if (yLineOffset > 0) {
+                    byte |= bmp.data[bmpIndex - 1] >> (8 - bitAlignOffset);
+                }
+                // }
+                // _frameBuf[fbIdx + x] |= bmp.data[bmpIndex++] & mask;
+                _frameBuf[fbIdx + x] |= byte & mask;
+                // ++fbIdx;
+                ++bmpIndex;
+            }
+            ++yLineOffset;
+            yBitOffset = 0;
+        }
+        // } else { // bitmap position not aligned to 8bit boundary
+        // }
+
+        // for (std::uint8_t byte : bmp.data) {
+        // }
+
+        // while (height > 0) {
+        //     _frameBuf[] |= bmp.data[] & mask;
+        // }
+
+    }    // TODO implement
+
+    void invert(const Point& start, unsigned int length, unsigned int width) noexcept
+    {
+        // TODO implement
+    }
+
+    void update() noexcept
+    {
+        // TODO split the framebuffer into tiles and only update the modified tiles
+
+        const display_buffer_descriptor desc{
+            .buf_size = _frameBuf.size(), .width = width, .height = height, .pitch = width};
+        display_write(_dev, 0, 0, &desc, _frameBuf.data());
+    }
 
   private:
+    void drawHLine(const Point& begin, unsigned int length) noexcept
+    {    // TODO only valid in horizontal addressing mode?
+        const unsigned int indexOffset = begin.y / 8 * width;
+
+        const std::uint8_t mask = 1 << (begin.y % 8);    // TODO could implement thickness here?
+
+        for (unsigned int i = 0; i < length; ++i) {
+            _frameBuf[indexOffset + begin.x + i] |= mask;
+        }
+    }
+
+    // std::array<std::uint8_t, width * height / 8> _frameBuf{};    // TODO verify that width *height is evenly
+    // divisible
+    //                                                               // by 8
+    // TODO dont put framebuffer onto the stack?
+    FrameBuffer<width, height>& _frameBuf;
     const device* const _dev;
 };
 

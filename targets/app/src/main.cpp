@@ -18,6 +18,8 @@
 
 LOG_MODULE_REGISTER(app, CONFIG_LOG_DEFAULT_LEVEL);
 
+DT_DISPLAY_FRAMEBUF_DEFINE(frameBuf, DT_CHOSEN(display));
+
 int main()
 {
     using ProviderList = std::tuple<SettingsProvider, TemperatureProvider, TimeProvider>;
@@ -26,7 +28,7 @@ int main()
     providers.init();
 
     static constexpr const device* const dispDev = DEVICE_DT_GET(DT_CHOSEN(display));
-    Display display(dispDev);
+    Display display(dispDev, frameBuf);
     display.init();
 
     using AppList = std::tuple<App::HomeScreen, App::Settings>;
