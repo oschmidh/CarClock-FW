@@ -1,0 +1,4 @@
+source modules/pigweed/bootstrap.sh
+pip install zephyr/scripts/requirements.txt
+
+source modules/pigweed/activate.sh
