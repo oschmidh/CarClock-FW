@@ -36,12 +36,14 @@ class HomeScreen : public AppBase {
         display.drawHLine({64, 7}, 64, 2);
 
         display.drawHLine({0, 31}, 25, 2);
-        display.draw(Line{{25, 31}, {50, 56}}, 2);
+        // display.draw(Line{{25, 31}, {50, 56}}, 2);
+        display.draw(Line{{25, 31}, {50, 56}}, 1);  // TODO because thickness is not supported
+        display.draw(Line{{25, 32}, {50, 57}}, 1);
         display.drawHLine({51, 56}, 77, 2);
 
         display.draw(tempBox, {2, 13});
         display.draw(tempIconSmall, {4, 15});
-        display.invert({2, 13}, tempBox.width, tempBox.height);
+        display.invert({{2, 13}, tempBox.width, tempBox.height});
         display.draw(mitsubishiIconSmall, {10, 40});
     }
 
@@ -56,9 +58,11 @@ class HomeScreen : public AppBase {
     {
         const auto time = _time.getTime();
         std::array<char, 6> timeString{};
-        std::snprintf(timeString.data(), timeString.size(), "%01d%c%01d", time.hours, _colonBlink ? ':' : ' ',
-                      time.minutes);
+        std::snprintf(timeString.data(), timeString.size(), "%02d%c%02d", time.hours, _colonBlink ? ':' : '/',
+                      time.minutes);    // NOTE ' ' is mapped to '/' in font
         _colonBlink = !_colonBlink;
+
+        // printk("run (%s)\n", timeString.data());
 
         // TODO print temperature
 

@@ -44,7 +44,7 @@ class Display {
             return false;
         }
 
-        if (display_set_pixel_format(_dev, PIXEL_FORMAT_MONO10) != 0) {
+        if (display_set_pixel_format(_dev, PIXEL_FORMAT_MONO01) != 0) {
             // LOG_ERR("Failed to set required pixel format");  // TODO
             return false;
         }
@@ -57,6 +57,10 @@ class Display {
     void draw(std::string_view text, Point pos, const FONT_T& font) noexcept
     {
         for (char c : text) {
+            if (c == '\0') {
+                return;
+            }
+
             draw(font.getBitmap(c), pos);
             pos.x += font.width + font.kerning;
         }
@@ -64,6 +68,8 @@ class Display {
 
     void draw(const Line& line, unsigned int thickness) noexcept
     {
+        // TODO implement thickness
+
         // Bresenham-algorithm, https://de.wikipedia.org/wiki/Bresenham-Algorithmus
         Point p = line.begin;
 
@@ -138,58 +144,166 @@ class Display {
     // template <typename T>
     // void draw(const T& bmp, std::size_t x, std::size_t y) noexcept requires {}
 
-    template <int W_V, int H_V>
+    template <int W_V, int H_V>    // TODO remove template to avoid bloat
     void draw(const Bitmap<W_V, H_V>& bmp, Point pos) noexcept
-    {
-        // unsigned int height = H_V;
-        int bmpIndex = 0;
+    { /*
+         // unsigned int height = H_V;
+         int bmpIndex = 0;
 
-        // for (unsigned int y = 0; y < H_V; ++y) {
-        // int y = pos.y;
-        const int yPos = pos.y / 8;
-        int yLineOffset = 0;
-        int yBitOffset = pos.y % 8u;
-        const int bitAlignOffset = pos.y % 8u;
+         // for (unsigned int y = 0; y < H_V; ++y) {
+         // int y = pos.y;
+         const int yPos = pos.y / 8;
+         int yLineOffset = 0;
+         int yBitOffset = pos.y % 8u;
+         const int bitAlignOffset = pos.y % 8u;
 
-        // if (yBitOffset == 0) {
-        while ((yLineOffset * 8 + yBitOffset) <= bmp.height) {
+         // if (yBitOffset == 0) {
+         while ((yLineOffset * 8 + yBitOffset) <= bmp.height) {
 
-            unsigned int fbIdx = (yPos + yLineOffset) * width + pos.x;
-            const unsigned int maskHeight = std::min(bitAlignOffset + bmp.height - yLineOffset * 8, 8) - yBitOffset;
-            // const unsigned int maskHeight = std::min(bmp.height - yLineOffset * 8, 8);
-            const std::uint8_t mask = (2 << (maskHeight - 1)) - 1;
+             unsigned int fbIdx = (yPos + yLineOffset) * width + pos.x;
+             const unsigned int maskHeight = std::min(bitAlignOffset + bmp.height - yLineOffset * 8, 8) - yBitOffset;
+             // const unsigned int maskHeight = std::min(bmp.height - yLineOffset * 8, 8);
+             const std::uint8_t mask = ((2 << (maskHeight - 1)) - 1) << yBitOffset;
+             printk("mask: 0x%02x\n", mask);
+             printk("bitAlignOffset: %d\n", bitAlignOffset);
+             printk("maskHeight: %d\n", maskHeight);
+             printk("yBitOffset: %d\n", yBitOffset);
 
-            for (unsigned int x = 0; x < bmp.width; ++x) {
-                std::uint8_t byte = bmp.data[bmpIndex] << bitAlignOffset;
-                // if (bitAlignOffset != 0) {
-                // byte << bitAlignOffset;
-                if (yLineOffset > 0) {
-                    byte |= bmp.data[bmpIndex - 1] >> (8 - bitAlignOffset);
-                }
-                // }
-                // _frameBuf[fbIdx + x] |= bmp.data[bmpIndex++] & mask;
-                _frameBuf[fbIdx + x] |= byte & mask;
-                // ++fbIdx;
-                ++bmpIndex;
+             for (unsigned int x = 0; x < bmp.width; ++x) {
+                 std::uint8_t byte = bmp.data[bmpIndex] << yBitOffset;
+                 // if (bitAlignOffset != 0) {
+                 // byte << bitAlignOffset;
+                 if (yLineOffset > 0) {
+                     byte |= bmp.data[bmpIndex - 1] >> (8 - yBitOffset);
+                 }
+                 // }
+                 // _frameBuf[fbIdx + x] |= bmp.data[bmpIndex++] & mask;
+                 // printk("byte: 0x%02x\n", byte);
+
+                 _frameBuf[fbIdx + x] &= ~mask;
+                 _frameBuf[fbIdx + x] |= byte & mask;
+                 // ++fbIdx;
+                 ++bmpIndex;
+             }
+             ++yLineOffset;
+             yBitOffset = 0;
+         }
+         // } else { // bitmap position not aligned to 8bit boundary
+         // }
+
+         // for (std::uint8_t byte : bmp.data) {
+         // }
+
+         // while (height > 0) {
+         //     _frameBuf[] |= bmp.data[] & mask;
+         // }
+ */
+        unsigned int bmpIndex = 0;
+        const unsigned int bit = pos.y % 8u;
+
+        for (int x = pos.x; x < pos.x + bmp.width; ++x) {
+            unsigned int idx = pos.y / 8 * width + x;
+            unsigned int height = bmp.height;
+
+            // printk("inverting line\n-------------\n");
+            // printk("height: %d\n", height);
+            if (x <= pos.x + 3) {
+                printk("x: %d\n", x - pos.x);
+                printk("bit: %d\n", bit);
             }
-            ++yLineOffset;
-            yBitOffset = 0;
+            if (bit) {
+                // std::uint8_t mask{};
+                // for (unsigned int i = 0; i < std::min(height, 8u); ++i) {
+                //     mask |= 1 << (bit + i);
+                // }
+                const unsigned int h = std::min(height, 8u);
+                const std::uint8_t mask = BIT_MASK(h) << bit;
+                const std::uint8_t data = bmp.data[bmpIndex] << bit;
+                if (x <= pos.x + 3) {
+                    printk("first mask: 0x%02x\n", mask);
+                    printk("first data: 0x%02x\n", data);
+                }
+                // printk("h: %d\n", h);
+                _frameBuf[idx] &= ~mask;
+                _frameBuf[idx] |= data & mask;
+                // ++bmpIndex;
+                idx += width;
+                // height -= (h - bit); // TODO if bit > h?
+                height = height + bit - h;
+            }
+
+            while (height >= 8) {
+                ++bmpIndex;
+                const std::uint8_t data =
+                    bit ? (bmp.data[bmpIndex] << bit) | (bmp.data[bmpIndex - 1] >> (8u - bit)) : bmp.data[bmpIndex];
+                if (x <= pos.x + 3) {
+                    printk("mask: 0x%02x\n", 0xff);
+                    printk("data: 0x%02x\n", data);
+                }
+                _frameBuf[idx] = data;
+                idx += width;
+                height -= 8;
+            }
+
+            // std::uint8_t mask{};
+
+            const std::uint8_t mask = BIT_MASK(height);
+            const std::uint8_t data =
+                // bit ? (bmp.data[bmpIndex] << bit) | (bmp.data[bmpIndex - 1] >> (8u - bit)) : bmp.data[bmpIndex];
+                bit ? (bmp.data[bmpIndex] << bit) : bmp.data[bmpIndex];
+            if (x <= pos.x + 3) {
+                printk("last mask: 0x%02x\n", mask);
+                printk("last data: 0x%02x\n\n", data);
+            }
+            // for (unsigned int i = 0; i < height; ++i) {
+            //     mask |= 1 << i;
+            // }
+            _frameBuf[idx] &= ~mask;
+            _frameBuf[idx] |= data & mask;
+            ++bmpIndex;
         }
-        // } else { // bitmap position not aligned to 8bit boundary
-        // }
+    }
 
-        // for (std::uint8_t byte : bmp.data) {
-        // }
-
-        // while (height > 0) {
-        //     _frameBuf[] |= bmp.data[] & mask;
-        // }
-
-    }    // TODO implement
-
-    void invert(const Point& start, unsigned int length, unsigned int width) noexcept
+    void invert(const Rectangle& area) noexcept
     {
-        // TODO implement
+        for (std::size_t x = area.begin.x; x < area.begin.x + area.width; ++x) {
+            // TODO almost same as drawVLine, extract common part:
+            unsigned int idx = area.begin.y / 8 * width + x;
+            unsigned int height = area.height;
+            const unsigned int bit = area.begin.y % 8u;
+
+            // printk("inverting line\n-------------\n");
+            // printk("height: %d\n", height);
+
+            if (bit != 0) {
+                // std::uint8_t mask{};
+                // for (unsigned int i = 0; i < std::min(height, 8u); ++i) {
+                //     mask |= 1 << (bit + i);
+                // }
+                const unsigned int h = std::min(height, 8u);
+                const std::uint8_t mask = BIT_MASK(h) << bit;
+                // printk("first mask: 0x%02x\n", mask);
+                // printk("h: %d\n", h);
+                _frameBuf[idx] ^= mask;
+                idx += width;
+                height -= (h - bit);
+            }
+
+            while (height >= 8) {
+                // printk("mask: 0x%02x\n", 0xff);
+                _frameBuf[idx] ^= 0xff;
+                idx += width;
+                height -= 8;
+            }
+
+            // std::uint8_t mask{};
+            const std::uint8_t mask = BIT_MASK(height);
+            // printk("last mask: 0x%02x\n\n", mask);
+            // for (unsigned int i = 0; i < height; ++i) {
+            //     mask |= 1 << i;
+            // }
+            _frameBuf[idx] ^= mask;
+        }
     }
 
     void update() noexcept

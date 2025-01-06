@@ -17,6 +17,12 @@ struct Line {
     Point end;
 };
 
+struct Rectangle {
+    Point begin;
+    unsigned int width;
+    unsigned int height;
+};
+
 template <int WIDTH_V, int HEIGHT_V>
 struct Bitmap {
     static constexpr int width = WIDTH_V;
