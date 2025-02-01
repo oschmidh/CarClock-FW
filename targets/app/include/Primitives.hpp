@@ -5,8 +5,8 @@
 #include <cstdint>
 
 struct Point {
-    int x;
-    int y;
+    unsigned int x;
+    unsigned int y;
 
     constexpr bool operator==(const Point& other) const noexcept { return (x == other.x) && (y == other.y); }
     constexpr bool operator!=(const Point& other) const noexcept { return !(*this == other); }

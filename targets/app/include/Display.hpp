@@ -73,8 +73,8 @@ class Display {
         // Bresenham-algorithm, https://de.wikipedia.org/wiki/Bresenham-Algorithmus
         Point p = line.begin;
 
-        const int dx = std::abs(line.end.x - line.begin.x);
-        const int dy = -std::abs(line.end.y - line.begin.y);
+        const int dx = std::abs(static_cast<int>(line.end.x - line.begin.x));
+        const int dy = -std::abs(static_cast<int>(line.end.y - line.begin.y));
         const int sx = line.begin.x < line.end.x ? 1 : -1;
         const int sy = line.begin.y < line.end.y ? 1 : -1;
         int err = dx + dy;
