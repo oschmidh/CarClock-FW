@@ -113,32 +113,10 @@ class Display {
     }
 
     void drawVLine(const Point& begin, unsigned int length, unsigned int thickness) noexcept
-    {    // TODO only valid in horizontal addressing mode?
-        // TODO implement thickness
-
-        unsigned int idx = begin.y / 8 * width + begin.x;
-        const unsigned int bit = begin.y % 8u;    // TODO assumes that width % 8 == 0; ?
-
-        if (bit != 0) {
-            std::uint8_t mask{};
-            for (unsigned int i = 0; i < std::min(length, 8u); ++i) {
-                mask |= 1 << (bit + i);
-            }
-            _frameBuf[idx] |= mask;
-            idx += width;
+    {
+        for (unsigned int i = 0; i < thickness; ++i) {
+            drawVLine({begin.x + static_cast<int>(i), begin.y}, length);
         }
-
-        while (length >= 8) {
-            _frameBuf[idx] |= 0xff;
-            idx += width;
-            length -= 8;
-        }
-
-        std::uint8_t mask{};
-        for (unsigned int i = 0; i < length; ++i) {
-            mask |= 1 << i;
-        }
-        _frameBuf[idx] |= mask;
     }
 
     // template <typename T>
@@ -265,6 +243,34 @@ class Display {
         for (unsigned int i = 0; i < length; ++i) {
             _frameBuf[indexOffset + begin.x + i] |= mask;
         }
+    }
+
+    void drawVLine(const Point& begin, unsigned int length) noexcept
+    {    // TODO only valid in horizontal addressing mode?
+        unsigned int idx = begin.y / 8 * width + begin.x;
+        const unsigned int bit = begin.y % 8u;    // TODO assumes that width % 8 == 0; ?
+
+        printk("drawVLine() x: %d, y: %d, len: %d\n", begin.x, begin.y, length);
+
+        if (bit != 0) {
+            const unsigned int maskHeight = std::min(length, 8u - bit);
+            const std::uint8_t mask = BIT_MASK(maskHeight) << bit;
+            _frameBuf[idx] |= mask;
+            idx += width;
+            length -= maskHeight;
+            printk(" > drawing first %d bits\n", maskHeight);
+        }
+
+        while (length >= 8) {
+            _frameBuf[idx] |= 0xff;
+            idx += width;
+            length -= 8;
+            printk(" > drawing 8 bits\n");
+        }
+
+        const std::uint8_t mask = BIT_MASK(length);
+        _frameBuf[idx] |= mask;
+        printk(" > drawing last %d bits\n", length);
     }
 
     // std::array<std::uint8_t, width * height / 8> _frameBuf{};    // TODO verify that width *height is evenly
