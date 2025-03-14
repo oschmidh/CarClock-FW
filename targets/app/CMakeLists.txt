@@ -8,6 +8,7 @@ target_include_directories(app PRIVATE include)
 target_link_libraries(app
 PUBLIC
     pw_thread.thread
+    mdspan
 )
 
 target_sources(app

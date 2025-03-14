@@ -1,25 +1,49 @@
+#include "dt-bindings/mipi_dbi/mipi_dbi.h"
+
 / {
     chosen {
         display = &screen;
+        rtc = &rtc;
+    };
+
+    mipi-dbi-spi1 {
+        compatible = "zephyr,mipi-dbi-spi";
+        #address-cells = <0x1>;
+        #size-cells = <0x0>;
+        spi-dev = <&spi1>;
+        dc-gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+        status = "okay";
+
+        screen: ssd1322@0 {
+            compatible = "solomon,ssd1322";
+            reg = <0>;
+            status = "okay";
+
+            // display settings:
+            height = <64>;
+            width = <256>;
+            column-offset = <28>;
+            row-offset = <0>;
+            start-line = <0>;
+            mux-ratio = <64>;
+            remap-com-dual;
+
+            // remap-row-first;
+            remap-nibble;
+            remap-rows;
+
+            // spi settings:
+            mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+            mipi-cpol;
+            mipi-cpha;
+            mipi-max-frequency = <DT_FREQ_M(1)>; // TODO 50MHz max
+        };
+
     };
 };
 
-&i2c1 {
+&spi1 {
     status = "okay";
-    clock-frequency = <I2C_BITRATE_FAST>;
-
-    screen: ssd1306@3c {
-        compatible = "solomon,ssd1306fb";
-        reg = <0x3c>;
-        height = <64>;
-        width = <128>;
-        segment-offset = <0>;
-        page-offset = <0>;
-        display-offset = <0>;
-        multiplex-ratio = <63>;
-        prechargep = <0xD1>;
-        segment-remap;
-        com-invdir;
-        // com-sequential;
-    };
+    cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
 };

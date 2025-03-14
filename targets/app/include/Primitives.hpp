@@ -2,6 +2,7 @@
 #define CARCLOCK_FW_TARGETS_APP_INCLUDE_PRIMITIVES_HPP
 
 #include <array>
+#include <mdspan/mdspan.hpp>
 #include <cstdint>
 
 struct Point {
@@ -23,11 +24,25 @@ struct Rectangle {
     unsigned int height;
 };
 
-template <int WIDTH_V, int HEIGHT_V>
+template <unsigned int WIDTH_V, unsigned int HEIGHT_V, unsigned int COLOR_DEPTH_V = 1>
 struct Bitmap {
-    static constexpr int width = WIDTH_V;
-    static constexpr int height = HEIGHT_V;
-    std::array<std::uint8_t, (height + 1 / 8) * width> data;
+    static constexpr unsigned int width = WIDTH_V;
+    static constexpr unsigned int height = HEIGHT_V;
+    std::array<std::uint8_t, height * width * COLOR_DEPTH_V / 8> data;
+};
+
+struct BitmapView {
+    template <unsigned int WIDTH_V, unsigned int HEIGHT_V, unsigned int COLOR_DEPTH_V>
+    constexpr BitmapView(const Bitmap<WIDTH_V, HEIGHT_V, COLOR_DEPTH_V>& bmp) noexcept
+     : width(bmp.width)
+     , height(bmp.height)
+     , data(bmp.data.data(), height, width / (8 / COLOR_DEPTH_V))    // TODO how to ensure that
+                                                                     // the size matches the
+                                                                     // array?
+    { }
+    unsigned int width;
+    unsigned int height;
+    Kokkos::mdspan<const std::uint8_t, Kokkos::dextents<unsigned int, 2>> data;
 };
 
 #endif    // CARCLOCK_FW_TARGETS_APP_INCLUDE_PRIMITIVES_HPP

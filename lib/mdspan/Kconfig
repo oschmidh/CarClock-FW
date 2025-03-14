@@ -1,0 +1,3 @@
+config MDSPAN
+    bool "kokkos::mdspan"
+    select REQUIRES_FULL_LIBCPP

@@ -10,6 +10,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: pigweed
       url-base: https://pigweed.googlesource.com/pigweed
+    - name: kokkos
+      url-base: https://github.com/kokkos
 
   projects:
     - name: zephyr
@@ -24,3 +26,8 @@ manifest:
       remote: pigweed
       revision: main
       path: modules/pigweed
+
+    - name: mdspan
+      remote: kokkos
+      revision: stable
+      path: modules/mdspan

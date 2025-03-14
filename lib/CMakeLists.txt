@@ -1,0 +1,2 @@
+add_subdirectory_ifdef(CONFIG_MDSPAN mdspan)
+add_subdirectory_ifdef(CONFIG_MYLIB myLib)
