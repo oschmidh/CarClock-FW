@@ -391,36 +391,12 @@ class Display {
 
     void invert(const Rectangle& area) noexcept
     {
-        for (std::size_t x = area.begin.x; x < area.begin.x + area.width; ++x) {
-            // TODO almost same as drawVLine, extract common part:
-            unsigned int idx = area.begin.y / 8 * width + x;
-            unsigned int height = area.height;
-            const unsigned int bit = area.begin.y % 8u;
-
-            if (bit != 0) {
-                // std::uint8_t mask{};
-                // for (unsigned int i = 0; i < std::min(height, 8u); ++i) {
-                //     mask |= 1 << (bit + i);
-                // }
-                const unsigned int h = std::min(height, 8u);
-                const std::uint8_t mask = BIT_MASK(h) << bit;
-                _frameBuf[idx] ^= mask;
-                idx += width;
-                height -= (h - bit);
-            }
-
-            while (height >= 8) {
-                _frameBuf[idx] ^= 0xff;
-                idx += width;
-                height -= 8;
-            }
-
-            // std::uint8_t mask{};
-            const std::uint8_t mask = BIT_MASK(height);
-            // for (unsigned int i = 0; i < height; ++i) {
-            //     mask |= 1 << i;
-            // }
-            _frameBuf[idx] ^= mask;
+        for (unsigned int y = 0; y < area.height; ++y) {
+            const unsigned int hzBytes = (area.width + 1) / 2;    // NOTE div by 2, rounded up
+            const auto invert = [](std::uint8_t data) noexcept { return data ^ 0xff; };
+            std::transform(&_frameBuf[area.begin.y + y, area.begin.x / 2],
+                           &_frameBuf[area.begin.y + y, area.begin.x / 2 + hzBytes],
+                           &_frameBuf[area.begin.y + y, area.begin.x / 2], invert);
         }
     }
 
