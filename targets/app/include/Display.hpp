@@ -328,24 +328,34 @@ class Display {
         const unsigned int horizBitOffset = pos.x % 2;    // TODO 2 is 8/COLOR_DEPTH
 
         for (unsigned int y = 0; y < bmp.height; ++y) {
-            const unsigned int hzBytes = (bmp.width + 1) / 2;    // NOTE div by 2, rounded up
 
             if (!horizBitOffset) {
                 // fast algorithm for positions aligned to full byte boundaries
                 std::copy_n(&bmp.data[y, 0], hzBytes, &_frameBuf[pos.y + y, pos.x / 2]);
+
+                const unsigned int hzBytes = bmp.width / 2;
+                if (const auto rem = bmp.width - hzBytes * 2; rem > 0) {
+                    _frameBuf[pos.y + y, pos.x / 2 + hzBytes] &= ~0xf0;
+                    _frameBuf[pos.y + y, pos.x / 2 + hzBytes] |= bmp.data[y, hzBytes] & 0xf0;
+                }
             } else {
                 // slow algorithm for unaligned positions
-                _frameBuf[pos.y + y, pos.x / 2] &= 0xf;
+                _frameBuf[pos.y + y, pos.x / 2] &= ~0xf;
                 _frameBuf[pos.y + y, pos.x / 2] |= (bmp.data[y, 0] & 0xf0) >> 4u;
 
-                for (unsigned int x = 1; x < hzBytes; ++x) {
+                const unsigned int hzBytes = (bmp.width - 1) / 2;
+                for (unsigned int x = horizBitOffset; x < hzBytes + horizBitOffset; ++x) {
                     // nibble swap:
-                    const std::uint8_t merged = ((bmp.data[y, x - 1] & 0xf) << 4u) | ((bmp.data[y, x] & 0xf0) >> 4u);
+                    const std::uint8_t merged =
+                        ((bmp.data[y, x - horizBitOffset] & 0xf) << 4u) | ((bmp.data[y, x] & 0xf0) >> 4u);
 
                     _frameBuf[pos.y + y, pos.x / 2 + x] = merged;
                 }
-                _frameBuf[pos.y + y, pos.x / 2 + hzBytes] &= 0xf0;
-                _frameBuf[pos.y + y, pos.x / 2 + hzBytes] |= (bmp.data[y, hzBytes - 1] & 0xf) << 4u;
+
+                if (const auto rem = bmp.width - hzBytes * 2 - horizBitOffset; rem > 0) {
+                    _frameBuf[pos.y + y, pos.x / 2 + hzBytes + horizBitOffset] &= ~0xf0;
+                    _frameBuf[pos.y + y, pos.x / 2 + hzBytes + horizBitOffset] |= bmp.data[y, hzBytes] << 4u;
+                }
             }
         }
 
