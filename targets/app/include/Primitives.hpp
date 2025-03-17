@@ -28,7 +28,8 @@ template <unsigned int WIDTH_V, unsigned int HEIGHT_V, unsigned int COLOR_DEPTH_
 struct Bitmap {
     static constexpr unsigned int width = WIDTH_V;
     static constexpr unsigned int height = HEIGHT_V;
-    std::array<std::uint8_t, height * width * COLOR_DEPTH_V / 8> data;
+    static constexpr std::size_t size() noexcept { return height * ((width * COLOR_DEPTH_V + 7) / 8); }
+    std::array<std::uint8_t, size()> data;    // round up
 };
 
 struct BitmapView {
@@ -36,9 +37,9 @@ struct BitmapView {
     constexpr BitmapView(const Bitmap<WIDTH_V, HEIGHT_V, COLOR_DEPTH_V>& bmp) noexcept
      : width(bmp.width)
      , height(bmp.height)
-     , data(bmp.data.data(), height, width / (8 / COLOR_DEPTH_V))    // TODO how to ensure that
-                                                                     // the size matches the
-                                                                     // array?
+     , data(bmp.data.data(), height, (width * COLOR_DEPTH_V + 7) / 8)    // TODO how to ensure that
+                                                                         // the size matches the
+                                                                         // array?
     { }
     unsigned int width;
     unsigned int height;
