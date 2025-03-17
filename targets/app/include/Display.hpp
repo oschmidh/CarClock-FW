@@ -129,18 +129,40 @@ class Display {
         _frameBuf[idx] |= mask;
     }
 
-    void drawHLine(const Point& begin, unsigned int length, unsigned int thickness) noexcept
+    void drawHLine(const Point& begin, unsigned int length, unsigned int thickness = 1) noexcept
     {
         for (unsigned int i = 0; i < thickness; ++i) {
-            drawHLine({begin.x, begin.y + static_cast<int>(i)}, length);    // TODO brute-force solution...
+            _drawHLine({begin.x + i, begin.y}, length);
         }
     }
 
-    void drawVLine(const Point& begin, unsigned int length, unsigned int thickness) noexcept
+    void drawVLine(const Point& begin, unsigned int length, unsigned int thickness = 1) noexcept
     {
-        for (unsigned int i = 0; i < thickness; ++i) {
-            drawVLine({begin.x + static_cast<int>(i), begin.y}, length);
+        const unsigned int horizBitOffset = begin.x % 2;    // TODO 2 is 8/COLOR_DEPTH
+
+        Point pos = {begin.x, begin.y};
+        if (horizBitOffset) {
+            _drawVLineMasked({pos.x, pos.y}, length, 0x0f);
+            --thickness;
+            ++pos.x;
         }
+
+        for (unsigned int x = 1; x < thickness; x += 2) {
+            _drawVLineMasked({pos.x + x, pos.y}, length, 0xff);
+        }
+
+        if (thickness % 2) {
+            _drawVLineMasked({pos.x + thickness, pos.y}, length, 0xf0);
+        }
+    }
+
+    void draw(const Rectangle& rect, bool fill) noexcept
+    {
+        // TODO fill not yet implemented
+        drawHLine(rect.begin, rect.width);
+        drawHLine({rect.begin.x, rect.begin.y + rect.height}, rect.width);
+        drawVLine(rect.begin, rect.height);
+        drawVLine({rect.begin.x + rect.width, rect.begin.y}, rect.height);
     }
 
     // template <typename T>
@@ -414,38 +436,30 @@ class Display {
     }
 
   private:
-    void drawHLine(const Point& begin, unsigned int length) noexcept
-    {    // TODO only valid in horizontal addressing mode?
-        const unsigned int indexOffset = begin.y / 8 * width;
+    void _drawHLine(const Point& begin, unsigned int length) noexcept
+    {
+        const unsigned int horizBitOffset = begin.x % 2;    // TODO 2 is 8/COLOR_DEPTH
+        Point pos = {begin.x, begin.y};
 
-        const std::uint8_t mask = 1 << (begin.y % 8);    // TODO could implement thickness here?
+        if (horizBitOffset) {
+            _frameBuf[pos.y, pos.x / 2] |= 0xf;
+            --length;
+            ++pos.x;
+        }
 
-        for (unsigned int i = 0; i < length; ++i) {
-            _frameBuf[indexOffset + begin.x + i] |= mask;
+        const unsigned int hzBytes = length / 2;
+        std::fill_n(&_frameBuf[pos.y, pos.x / 2], hzBytes, 0xff);
+
+        if (const auto rem = length - hzBytes * 2; rem > 0) {
+            _frameBuf[pos.y, pos.x / 2 + hzBytes] |= 0xf0;
         }
     }
 
-    void drawVLine(const Point& begin, unsigned int length) noexcept
-    {    // TODO only valid in horizontal addressing mode?
-        unsigned int idx = begin.y / 8 * width + begin.x;
-        const unsigned int bit = begin.y % 8u;    // TODO assumes that width % 8 == 0; ?
-
-        if (bit != 0) {
-            const unsigned int maskHeight = std::min(length, 8u - bit);
-            const std::uint8_t mask = BIT_MASK(maskHeight) << bit;
-            _frameBuf[idx] |= mask;
-            idx += width;
-            length -= maskHeight;
+    void _drawVLineMasked(const Point& begin, unsigned int length, std::uint8_t mask) noexcept
+    {
+        for (unsigned int y = 0; y < length; ++y) {
+            _frameBuf[begin.y + y, begin.x / 2] |= mask;
         }
-
-        while (length >= 8) {
-            _frameBuf[idx] |= 0xff;
-            idx += width;
-            length -= 8;
-        }
-
-        const std::uint8_t mask = BIT_MASK(length);
-        _frameBuf[idx] |= mask;
     }
 
     // std::array<std::uint8_t, width * height / 8> _frameBuf{};    // TODO verify that width *height is evenly
