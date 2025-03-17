@@ -11,6 +11,32 @@ struct Point {
 
     constexpr bool operator==(const Point& other) const noexcept { return (x == other.x) && (y == other.y); }
     constexpr bool operator!=(const Point& other) const noexcept { return !(*this == other); }
+
+    constexpr Point& operator+=(const Point& other) noexcept
+    {
+        x += other.x;
+        y += other.y;
+        return *this;
+    }
+
+    friend Point operator+(Point lhs, const Point& rhs)
+    {
+        lhs += rhs;
+        return lhs;
+    }
+
+    constexpr Point& operator-=(const Point& other) noexcept
+    {
+        x -= other.x;
+        y -= other.y;
+        return *this;
+    }
+
+    friend Point operator-(Point lhs, const Point& rhs)
+    {
+        lhs -= rhs;
+        return lhs;
+    }
 };
 
 struct Line {
