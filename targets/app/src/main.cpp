@@ -28,7 +28,7 @@ int main()
     providers.init();
 
     static constexpr const device* const dispDev = DEVICE_DT_GET(DT_CHOSEN(display));
-    Display display(dispDev, frameBuf);
+    Display<256, 64, 4> display(dispDev, frameBuf);    // TODO size should be deducted
     display.init();
 
     using AppList = std::tuple<App::HomeScreen, App::Settings>;

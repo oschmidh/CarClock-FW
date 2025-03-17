@@ -15,7 +15,7 @@
 #include <cstdint>
 
 #define DT_DISPLAY_FRAMEBUF_DEFINE(name, nodeId) \
-    static FrameBufferType<DT_PROP(nodeId, width), DT_PROP(nodeId, height)> name { }
+    static FrameBufferType<DT_PROP(nodeId, width), DT_PROP(nodeId, height), 4> name { }    // TODO color depth hardcoded
 
 // template <std::size_t WIDTH_V, std::size_t HEIGHT_V>
 // class FrameBuffer {
@@ -39,20 +39,18 @@
 //     Kokkos::Experimental::mdarray<std::uint32_t, Extents> _buf{};
 // };
 
-template <std::size_t WIDTH_V, std::size_t HEIGHT_V>
-    requires(!(WIDTH_V * 4 % 8))    // TODO template for color_depth
+template <std::size_t WIDTH_V, std::size_t HEIGHT_V, unsigned int COLOR_DEPTH_V>
+    requires(!(WIDTH_V * COLOR_DEPTH_V % 8))
 using FrameBufferType =
-    Kokkos::Experimental::mdarray<std::uint8_t,
-                                  Kokkos::extents<unsigned int, HEIGHT_V, WIDTH_V * 4 / 8>>;    // TODO template for
-                                                                                                // color_depth
+    Kokkos::Experimental::mdarray<std::uint8_t, Kokkos::extents<unsigned int, HEIGHT_V, WIDTH_V * COLOR_DEPTH_V / 8>>;
 
-template <std::size_t WIDTH_V, std::size_t HEIGHT_V>
+template <std::size_t WIDTH_V, std::size_t HEIGHT_V, unsigned int COLOR_DEPTH_V>
 class Display {
   public:
     static constexpr std::size_t width = WIDTH_V;
     static constexpr std::size_t height = HEIGHT_V;
 
-    Display(const device* const dev, FrameBufferType<WIDTH_V, HEIGHT_V>& frameBuf) noexcept
+    Display(const device* const dev, FrameBufferType<WIDTH_V, HEIGHT_V, COLOR_DEPTH_V>& frameBuf) noexcept
      : _frameBuf(frameBuf)
      , _dev(dev)
     { }
@@ -454,7 +452,7 @@ class Display {
     // divisible
     //                                                               // by 8
     // TODO dont put framebuffer onto the stack?
-    FrameBufferType<width, height>& _frameBuf;
+    FrameBufferType<width, height, COLOR_DEPTH_V>& _frameBuf;
     const device* const _dev;
 };
 
