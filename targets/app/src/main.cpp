@@ -7,6 +7,7 @@
 #include "TemperatureProvider.hpp"
 #include "TimeProvider.hpp"
 
+#include "Framebuffer.hpp"
 #include "Display.hpp"
 
 #include <zephyr/kernel.h>
@@ -18,7 +19,9 @@
 
 LOG_MODULE_REGISTER(app, CONFIG_LOG_DEFAULT_LEVEL);
 
-DT_DISPLAY_FRAMEBUF_DEFINE(frameBuf, DT_CHOSEN(display));
+// TODO color depth hardcoded:
+using FramebufferType = Framebuffer<DT_PROP(DT_CHOSEN(display), width), DT_PROP(DT_CHOSEN(display), height), 4>;
+FramebufferType fb;
 
 int main()
 {
@@ -28,18 +31,18 @@ int main()
     providers.init();
 
     static constexpr const device* const dispDev = DEVICE_DT_GET(DT_CHOSEN(display));
-    Display<256, 64, 4> display(dispDev, frameBuf);    // TODO size should be deducted
+    Display display(dispDev);
     display.init();
 
     using AppList = std::tuple<App::HomeScreen, App::Settings>;
-    auto launcher = createAppLauncher<AppList>(display, providers);
+    auto launcher = createAppLauncher<AppList>(fb, providers);
 
     // bootAnimation(display); // TODO implement
 
     launcher.run();
 
     while (1) {
-        display.update();    // TODO move to UI thread
+        display.update(fb);    // TODO move to UI thread
         k_sleep(K_MSEC(10));
     }
 
