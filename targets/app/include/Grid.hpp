@@ -9,34 +9,13 @@ class Grid {
     static constexpr unsigned int height = 13;    // TODO hardcoded
 
   public:
-    // Grid(Point pos, auto&&... args) noexcept
-    //  : _pos(pos)
-    //  , _widgets(args...)
-    // { }
-
     template <typename... Ts>
     Grid(Ts&&... args) noexcept
      : _widgets(std::forward<Ts>(args)...)
-    {
-        printk("widget 0 addr: %p\n", &std::get<0>(_widgets));
-        printk("widget 1 addr: %p\n", &std::get<1>(_widgets));
-        printk("widget 2 addr: %p\n", &std::get<2>(_widgets));
-    }
-
-    // template <typename... Ts>
-    // Grid(Ts&... args) noexcept
-    //  : _widgets(args...)
-    // {
-    //     printk("widget 0 addr: %p\n", &std::get<0>(_widgets));
-    //     printk("widget 1 addr: %p\n", &std::get<1>(_widgets));
-    //     printk("widget 2 addr: %p\n", &std::get<2>(_widgets));
-    // }
+    { }
 
     constexpr void setPos(Point pos) noexcept
     {
-        printk("widget 0 addr: %p\n", &std::get<0>(_widgets));
-        printk("widget 1 addr: %p\n", &std::get<1>(_widgets));
-        printk("widget 2 addr: %p\n", &std::get<2>(_widgets));
 
         for (unsigned int c = 0; c < COLS_V; ++c) {
             for (unsigned int r = 0; r < ROWS_V; ++r) {
@@ -53,8 +32,6 @@ class Grid {
 
     void draw(auto& display) noexcept
     {
-        // [this]<std::size_t N>(std::index_sequence<N>) noexcept { (std::get<I>(_widgets).draw(), ...); }(
-        //     std::make_index_sequence<sizeof...(WIDGET_Ts)>);
 
         std::apply([&display](auto&... w) { (w.draw(display), ...); }, _widgets);
     }
@@ -65,9 +42,7 @@ class Grid {
     template <unsigned int N = sizeof...(WIDGET_Ts) - 1>
     void setWidgetPos(unsigned int idx, Point pos) const noexcept
     {
-        printk("grid: setWidgetPos<%d>(%d, (%d|%d))\n", N, idx, pos.x, pos.y);
         if (idx == N) {
-            // printk("setting widget %d pos: (%d|%d)\n", idx, pos.x, pos.y);
             return std::get<N>(_widgets).setPos(pos);
         }
 
