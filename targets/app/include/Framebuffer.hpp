@@ -178,6 +178,28 @@ class Framebuffer {
         }
     }
 
+    void clear(const Rectangle& area) noexcept
+    {
+        const unsigned int horizBitOffset = area.begin.x % pxPerByte;
+
+        for (unsigned int y = 0; y < area.height; ++y) {
+            auto pos = area.begin + Point{0, y};
+
+            if (horizBitOffset) {
+                _buf[pos.y, pos.x / pxPerByte] &= ~0x0f;
+                pos += Point{1, 0};
+            }
+
+            const unsigned int hzBytes = (area.begin.x + area.width - pos.x) / pxPerByte;
+            std::fill(&_buf[pos.y, pos.x / pxPerByte], &_buf[pos.y, pos.x / pxPerByte + hzBytes], 0x00);
+            pos += Point{hzBytes * pxPerByte, 0};
+
+            if (const auto rem = area.begin.x + area.width - pos.x; rem > 0) {
+                _buf[pos.y, pos.x / pxPerByte] &= ~0xf0;
+            }
+        }
+    }
+
   private:
     void _drawHLine(const Point& begin, unsigned int length) noexcept
     {
