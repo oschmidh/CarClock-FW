@@ -1,5 +1,7 @@
-#ifndef CARINFOTAINMENTSYSTEM_FW_APP_INCLUDE_APPLAUNCHER_H
-#define CARINFOTAINMENTSYSTEM_FW_APP_INCLUDE_APPLAUNCHER_H
+#ifndef CARCLOCK_FW_TARGETS_APP_INCLUDE_APPLAUNCHER_HPP
+#define CARCLOCK_FW_TARGETS_APP_INCLUDE_APPLAUNCHER_HPP
+
+#include "Settings.hpp"    // TEST
 
 #include <pw_sync/binary_semaphore.h>
 #include <pw_thread/thread.h>
@@ -10,7 +12,7 @@
 #include <variant>
 #include <tuple>
 
-pw::thread::zephyr::StaticContextWithStack<512> threadContext;    // TODO define stackSize in kconfig
+pw::thread::zephyr::StaticContextWithStack<1024> threadContext;    // TODO define stackSize in kconfig
 
 template <typename, typename, typename>
 class AppLauncher;
@@ -26,11 +28,11 @@ class AppLauncher<std::tuple<APP_Ts...>, DISPLAY_T, PROVIDER_MANAGER_T> {
     void onEvent() { }
 
     template <typename APP_T>
-    void swichApp() noexcept
+    void switchApp() noexcept
     {
         _stop.release();
         _exited.acquire();
-        _apps.emplace(APP_T::create(_display, _providers));
+        _apps.template emplace<APP_T>(_display, _providers);
         _start.release();
     }
 
@@ -59,14 +61,15 @@ class AppLauncher<std::tuple<APP_Ts...>, DISPLAY_T, PROVIDER_MANAGER_T> {
     pw::sync::BinarySemaphore _start{};
     pw::sync::BinarySemaphore _stop{};
     pw::sync::BinarySemaphore _exited{};
-    std::variant<APP_Ts...> _apps{std::tuple_element_t<0, std::tuple<APP_Ts...>>::create(_display, _providers)};
+    std::variant<APP_Ts...> _apps{std::in_place_type<std::tuple_element_t<0, std::tuple<APP_Ts...>>>, _display,
+                                  _providers};
 };
 
 template <typename APP_TUPLE_T, typename DISPLAY_T, typename PROVIDER_T>
-constexpr auto createAppLauncher(DISPLAY_T& disp,
-                                 PROVIDER_T& provider) noexcept -> AppLauncher<APP_TUPLE_T, DISPLAY_T, PROVIDER_T>
+constexpr auto createAppLauncher(DISPLAY_T& disp, PROVIDER_T& provider) noexcept
+    -> AppLauncher<APP_TUPLE_T, DISPLAY_T, PROVIDER_T>
 {
     return AppLauncher<APP_TUPLE_T, DISPLAY_T, PROVIDER_T>(disp, provider);
 }
 
-#endif    // CARINFOTAINMENTSYSTEM_FW_APP_INCLUDE_APPLAUNCHER_H
+#endif    // CARCLOCK_FW_TARGETS_APP_INCLUDE_APPLAUNCHER_HPP
