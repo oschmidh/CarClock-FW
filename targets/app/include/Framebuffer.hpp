@@ -156,12 +156,25 @@ class Framebuffer {
 
     void invert(const Rectangle& area) noexcept
     {
+        const unsigned int horizBitOffset = area.begin.x % pxPerByte;
+
         for (unsigned int y = 0; y < area.height; ++y) {
-            const unsigned int hzBytes = (area.width + 1) / pxPerByte;    //  rounded up
+            auto pos = area.begin + Point{0, y};
+
+            if (horizBitOffset) {
+                _buf[pos.y, pos.x / pxPerByte] ^= 0x0f;
+                pos += Point{1, 0};
+            }
+
+            const unsigned int hzBytes = (area.begin.x + area.width - pos.x) / pxPerByte;
             const auto invert = [](std::uint8_t data) noexcept { return data ^ 0xff; };
-            std::transform(&_buf[area.begin.y + y, area.begin.x / pxPerByte],
-                           &_buf[area.begin.y + y, area.begin.x / pxPerByte + hzBytes],
-                           &_buf[area.begin.y + y, area.begin.x / pxPerByte], invert);
+            std::transform(&_buf[pos.y, pos.x / pxPerByte], &_buf[pos.y, pos.x / pxPerByte + hzBytes],
+                           &_buf[pos.y, pos.x / pxPerByte], invert);
+            pos += Point{hzBytes * pxPerByte, 0};
+
+            if (const auto rem = area.begin.x + area.width - pos.x; rem > 0) {
+                _buf[pos.y, pos.x / pxPerByte] ^= 0xf0;
+            }
         }
     }
 
