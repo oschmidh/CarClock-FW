@@ -84,7 +84,7 @@ class Framebuffer {
     void drawHLine(const Point& begin, unsigned int length, unsigned int thickness = 1) noexcept
     {
         for (unsigned int i = 0; i < thickness; ++i) {
-            _drawHLine({begin.x + i, begin.y}, length);
+            _drawHLine({begin.x, begin.y + i}, length);
         }
     }
 
@@ -152,6 +152,18 @@ class Framebuffer {
                 }
             }
         }
+        /*
+                // printk("\nfb:");
+                // for (int n = 0; n < 3; ++n) {
+                printk("char in fb at %d/%d:\n", pos.x, pos.y);
+                for (int i = 0; i < 5; ++i) {
+                    for (int j = 0; j < 3; ++j) {
+                        printk(" 0x%02x", _buf[pos.y + i, pos.x / 2 + j]);
+                    }
+                    printk("\n");
+                }
+                printk("\n");*/
+        // }
     }
 
     void invert(const Rectangle& area) noexcept
