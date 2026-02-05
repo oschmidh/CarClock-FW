@@ -5,8 +5,8 @@
 
 template <unsigned int COLS_V, unsigned int ROWS_V, typename... WIDGET_Ts>
 class Grid {
-    static constexpr unsigned int width = 200;    // TODO hardcoded
-    static constexpr unsigned int height = 13;    // TODO hardcoded
+    static constexpr int width = 200;    // TODO hardcoded
+    static constexpr int height = 13;    // TODO hardcoded
 
   public:
     template <typename... Ts>
@@ -32,8 +32,17 @@ class Grid {
 
     void draw(auto& display) noexcept
     {
-
         std::apply([&display](auto&... w) { (w.draw(display), ...); }, _widgets);
+    }
+
+    constexpr void resize(int width, int height) noexcept
+    {
+        _width = width;
+        _height = height;
+        const int widgetWidth = width / ROWS_V;
+        const int widgetHeight = height / COLS_V;
+        std::apply([widgetWidth, widgetHeight](auto&... widgets) { (widgets.resize(widgetWidth, widgetHeight), ...); },
+                   _widgets);
     }
 
   private:
@@ -53,6 +62,8 @@ class Grid {
         // TODO assert? should never happen
     }
 
+    unsigned int _width{};
+    unsigned int _height{};
     std::tuple<WIDGET_Ts...> _widgets;
 };
 
