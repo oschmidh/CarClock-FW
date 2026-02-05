@@ -13,27 +13,29 @@ class ScrollingList {
     static constexpr unsigned int sideItemOffset = 1;
     static constexpr unsigned int topOffset = 2;
     static constexpr unsigned int itemHeight = 14;
-    static constexpr unsigned int height = 62;                      // TODO should be settable
-    static constexpr unsigned int width = 213;                      // TODO should be settable
-    static constexpr unsigned int numRows = height / itemHeight;    // visible rows
+    // static constexpr unsigned int height = 62;                      // TODO should be settable
+    // static constexpr unsigned int width = 213;                      // TODO should be settable
+    // static constexpr unsigned int numRows = height / itemHeight;    // visible rows
 
   public:
     template <typename... Ts>
-    ScrollingList(Point pos, Ts&&... args) noexcept
+    constexpr ScrollingList(Point pos, unsigned int width, unsigned int height, Ts&&... args) noexcept
      : _pos(pos)
      , _items(std::forward<Ts>(args)...)
-    { }
+    {
+        resize(width, height);
+    }
 
     static constexpr std::size_t numItems() noexcept { return sizeof...(ITEM_Ts); }
 
     void draw(auto& display) noexcept
     {
 
-        display.clear({_pos, width, height});
+        display.clear({_pos, _width, _height});
         const Point rowOffset = {0, itemHeight};
 
-        for (unsigned int i = 0; i < numRows; ++i) {
-            display.drawHLine(_pos + rowOffset * i, width);
+        for (unsigned int i = 0; i < numRows(); ++i) {
+            display.drawHLine(_pos + rowOffset * i, _width);
 
             const auto itemIdx = _scrlIndex + i;
             // setItemPos(itemIdx, _pos + rowOffset * i + Point{0, 1});
@@ -43,7 +45,7 @@ class ScrollingList {
 
             if (itemIdx == _selIndex) {
                 // TODO adjust how selection is highlighted
-                display.invert({_pos + rowOffset * i, width, itemHeight});
+                display.invert({_pos + rowOffset * i, _width, itemHeight});
             }
         }
     }
@@ -55,7 +57,7 @@ class ScrollingList {
         }
         ++_selIndex;
 
-        if (_selIndex >= _scrlIndex + numRows) {
+        if (_selIndex >= _scrlIndex + numRows()) {
             ++_scrlIndex;
         }
     }
@@ -72,8 +74,21 @@ class ScrollingList {
         }
     }
 
+    constexpr void resize(unsigned int width, unsigned int height) noexcept
+    {
+        _width = width;
+        _height = height;
+        const unsigned int widgetWidth = width - (sideItemOffset * 2);
+        const unsigned int widgetHeight = itemHeight;    // TODO hardcoded for now
+        // std::apply([widgetWidth, widgetHeight](auto& widget) { widget.resize(widgetWidth, widgetHeight); }, _items);
+        std::apply([widgetWidth, widgetHeight](auto&... widgets) { (widgets.resize(widgetWidth, widgetHeight), ...); },
+                   _items);
+    }
+
   private:
     // template
+
+    constexpr unsigned int numRows() const noexcept { return _height / itemHeight; }    // visible rows
 
     template <unsigned int N = numItems() - 1>
     void setItemPos(unsigned int idx, Point pos) noexcept
@@ -103,6 +118,8 @@ class ScrollingList {
         // TODO assert? should never happen
     }
 
+    unsigned int _width{};
+    unsigned int _height{};
     unsigned int _selIndex{};
     unsigned int _scrlIndex{};
     Point _pos;
