@@ -29,7 +29,184 @@ struct FontDefinition {
     }
 };
 
-namespace Font {
+// template <char BEGIN_V, char END_V, unsigned int WIDTH_V, unsigned int HEIGHT_V, unsigned int COLOR_DEPTH_V = 1>
+// struct FontDefinition {
+//     static constexpr char firstChar = BEGIN_V;
+//     static constexpr char lastChar = END_V;
+//     static constexpr unsigned int width = WIDTH_V;
+//     static constexpr unsigned int height = HEIGHT_V;
+//     const unsigned int kerning;
+//     const std::array<Bitmap<width, height, COLOR_DEPTH_V>, lastChar - firstChar + 1> chars;
+
+//     template <unsigned int WIDTH_V, unsigned int HEIGHT_V, unsigned int COLOR_DEPTH_V = 1>
+//     struct Bitmap {
+//         static constexpr unsigned int width = WIDTH_V;
+//         static constexpr unsigned int height = HEIGHT_V;
+//         static constexpr std::size_t size() noexcept { return height * ((width * COLOR_DEPTH_V + 7) / 8); }
+//         std::array<std::uint8_t, size()> data;    // round up
+//     };
+
+//     constexpr const Bitmap<width, height, COLOR_DEPTH_V>& getBitmap(char c) const noexcept
+//     {
+//         // TODO ??
+//         // __ASSERT(c >= firstChar && c <= lastChar);
+
+//         // printk("getBitmap(%c), firstChar: %c, lastChar: %c\n", c, firstChar, lastChar);
+
+//         // TODO test
+//         c = std::clamp(c, firstChar, lastChar);    // TEST
+//         // printk("clamped char: %c\n", c);
+
+//         return chars[c - firstChar];
+//     }
+// };
+
+// struct Font {
+//     char firstChar;
+//     char lastChar;
+//     unsigned int width;
+//     unsigned int height;
+//     unsigned int kerning;
+
+//     template <char BEGIN_V, char END_V, unsigned int WIDTH_V, unsigned int HEIGHT_V, unsigned int COLOR_DEPTH_V = 1>
+//     constexpr Font(const FontDefinition<BEGIN_V, END_V, WIDTH_V, HEIGHT_V, COLOR_DEPTH_V>& fontDef) noexcept
+//      : firstChar(fontDef.firstChar)
+//      , lastChar(fontDef.lastChar)
+//      , width(fontDef.width)
+//      , height(fontDef.height)
+//      , kerning(fontDef.kerning)
+//      //  , chars(fontDef.chars.data(), fontDef.chars.size())
+//      , chars(fontDef.chars.data(), fontDef.chars.size(), sizeof(fontDef.chars[0]))
+//     { }
+
+//     constexpr Font(const Font& other) noexcept
+//      : firstChar(other.firstChar)
+//      , lastChar(other.lastChar)
+//      , width(other.width)
+//      , height(other.height)
+//      , kerning(other.kerning)
+//      , chars(other.chars)
+//     { }
+
+//     constexpr Font& operator=(const Font& other) noexcept
+//     {
+//         firstChar = other.firstChar;
+//         lastChar = other.lastChar;
+//         width = other.width;
+//         height = other.height;
+//         kerning = other.kerning;
+//         chars = other.chars;
+//         return *this;
+//     }
+
+//     // const std::span<BitmapView> chars;
+
+//     Kokkos::mdspan<const std::uint8_t, Kokkos::dextents<unsigned int, 2>> chars;
+
+//     constexpr BitmapView getBitmap(char c) const noexcept
+//     {
+//         c = std::clamp(c, firstChar, lastChar);
+//         // return chars[c - firstChar, 0];
+//         // return {.width = width, .height = height, .data = chars[c - firstChar, 0]};
+//         BitmapView ret{};
+//         ret.width = width;
+//         ret.height = height;
+//         // ret.data = Kokkos::mdspan<const std::uint8_t, Kokkos::dextents<unsigned int, 2>>{&chars[c - firstChar, 0],
+//         // width, height};
+//         ret.data = Kokkos::mdspan{&chars[c - firstChar, 0], height, (width * 4 + 7) / 8};    // TODO ugly?
+//         return ret;
+//     }
+// };
+
+struct Font {
+    char firstChar;
+    char lastChar;
+    int width;
+    int height;
+    int kerning;
+
+    template <char BEGIN_V, char END_V, int WIDTH_V, int HEIGHT_V, int COLOR_DEPTH_V = 1>
+    constexpr Font(const FontDefinition<BEGIN_V, END_V, WIDTH_V, HEIGHT_V, COLOR_DEPTH_V>& fontDef) noexcept
+     : firstChar(fontDef.firstChar)
+     , lastChar(fontDef.lastChar)
+     , width(fontDef.width)
+     , height(fontDef.height)
+     , kerning(fontDef.kerning)
+     , chars(fontDef.chars[0].data.data(), fontDef.chars.size() * fontDef.chars[0].data.size())    // TODO
+                                                                                                   // ugly
+                                                                                                   // af
+    { }
+
+    constexpr Font(const Font& other) noexcept
+     : firstChar(other.firstChar)
+     , lastChar(other.lastChar)
+     , width(other.width)
+     , height(other.height)
+     , kerning(other.kerning)
+     , chars(other.chars)
+    { }
+
+    constexpr Font& operator=(const Font& other) noexcept
+    {
+        firstChar = other.firstChar;
+        lastChar = other.lastChar;
+        width = other.width;
+        height = other.height;
+        kerning = other.kerning;
+        chars = other.chars;
+        return *this;
+    }
+
+    // const std::span<BitmapView> chars;
+
+    std::span<const std::uint8_t> chars;
+
+    constexpr BitmapView getBitmap(char c) const noexcept
+    {
+        c = std::clamp(c, firstChar, lastChar);
+        // return chars[c - firstChar, 0];
+        // return {.width = width, .height = height, .data = chars[c - firstChar, 0]};
+        // BitmapView ret{};
+        // ret.width = width;
+        // ret.height = height;
+        // // ret.data = Kokkos::mdspan<const std::uint8_t, Kokkos::dextents<unsigned int, 2>>{&chars[c - firstChar, 0],
+        // // width, height};
+        // ret.data = Kokkos::mdspan{&chars[c - firstChar, 0], height, (width * 4 + 7) / 8};    // TODO ugly?
+        // return ret;
+
+        // printk("idx: %d\n", (c - firstChar) * height * ((width * 4 + 7) / 8));
+        // printk("c: %d\n", c);
+        // printk("firstChar: %d\n", firstChar);
+        // printk("height: %d\n", height);
+        // printk("width: %d\n", width);
+
+        // const auto subspan = chars.subspan((c - firstChar) * height * (width * 4 + 7) / 8);
+
+        // printk("raw span:");
+        // for (unsigned int i = 0; i < 15; ++i) {
+        //     printk(" 0x%02x", subspan[i]);
+        // }
+
+        return BitmapView{chars.subspan((c - firstChar) * height * ((width * 4 + 7) / 8)), width,
+                          height};    // TODO color depth hardcoded?
+    }
+};
+
+// struct BitmapView {
+//     template <unsigned int WIDTH_V, unsigned int HEIGHT_V, unsigned int COLOR_DEPTH_V>
+//     constexpr BitmapView(const Bitmap<WIDTH_V, HEIGHT_V, COLOR_DEPTH_V>& bmp) noexcept
+//      : width(bmp.width)
+//      , height(bmp.height)
+//      , data(bmp.data.data(), height, (width * COLOR_DEPTH_V + 7) / 8)    // TODO how to ensure that
+//                                                                          // the size matches the
+//                                                                          // array?
+//     { }
+//     unsigned int width;
+//     unsigned int height;
+//     Kokkos::mdspan<const std::uint8_t, Kokkos::dextents<unsigned int, 2>> data;
+// };
+
+namespace Fonts {
 
 // static constexpr FontDefinition<'/', ':', 12, 21> CyberNumbers{
 //     .kerning = 2,
@@ -176,6 +353,6 @@ namespace Font {
 //                                                              {{0x14, 0x1c, 0x14}},    // 'z'
 //                                                          }}};
 
-}    // namespace Font
+}    // namespace Fonts
 
 #endif    // CARCLOCK_FW_TARGETS_APP_INCLUDE_FONT_HPP
