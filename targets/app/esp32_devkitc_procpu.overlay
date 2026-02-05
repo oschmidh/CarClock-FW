@@ -1,0 +1,77 @@
+#include "dt-bindings/mipi_dbi/mipi_dbi.h"
+
+/ {
+    chosen {
+        display = &screen;
+        rtc = &rtc;
+    };
+
+    mipi-dbi-spi2 {
+        compatible = "zephyr,mipi-dbi-spi";
+        #address-cells = <0x1>;
+        #size-cells = <0x0>;
+        spi-dev = <&spi2>;
+        dc-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+        status = "okay";
+
+        screen: ssd1322@0 {
+            compatible = "solomon,ssd1322";
+            reg = <0>;
+            status = "okay";
+
+            // display settings:
+            height = <64>;
+            width = <256>;
+            column-offset = <28>;
+            row-offset = <0>;
+            start-line = <0>;
+            mux-ratio = <63>;
+            oscillator-freq = <0x91>;
+            precharge-voltage = <0x1F>;
+            precharge-period = <0x8>;
+            vcomh-voltage = <0x7>;
+            phase-length = <0xE2>;
+            remap-com-dual;
+            grayscale-enhancement;
+
+            // remap-row-first;
+            remap-nibble;
+            remap-rows;
+
+            // spi settings:
+            mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+            mipi-cpol;
+            mipi-cpha;
+            mipi-max-frequency = <DT_FREQ_M(1)>; // TODO 50MHz max
+        };
+
+    };
+};
+
+&spi2 {
+    status = "okay";
+    // cs-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+};
+
+&i2c0 {
+    status = "okay";
+
+    ds3231: ds3231@68 {
+        compatible = "maxim,ds3231-mfd";
+        reg = <0x68>;
+        status = "okay";
+
+        // ds3231_sensor: ds3231_sensor {
+            //         compatible = "maxim,ds3231-sensor";
+            //         status = "okay";
+        // };
+
+        rtc: ds3231_rtc {
+            compatible = "maxim,ds3231-rtc";
+            status = "okay";
+            isw-gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            freq-32khz-gpios = <&gpio0 33 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+        };
+    };
+};
