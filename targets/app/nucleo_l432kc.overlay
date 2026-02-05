@@ -26,15 +26,21 @@
             column-offset = <28>;
             row-offset = <0>;
             start-line = <0>;
-            mux-ratio = <64>;
+            mux-ratio = <63>;
+            oscillator-freq = <0x91>;
+            precharge-voltage = <0x1F>;
+            precharge-period = <0x8>;
+            vcomh-voltage = <0x7>;
+            phase-length = <0xE2>;
             remap-com-dual;
+            grayscale-enhancement;
 
             // remap-row-first;
             remap-nibble;
             remap-rows;
 
             // spi settings:
-            mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+            mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
             mipi-cpol;
             mipi-cpha;
             mipi-max-frequency = <DT_FREQ_M(1)>; // TODO 50MHz max

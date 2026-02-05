@@ -5,14 +5,15 @@
 
 #include <pw_sync/binary_semaphore.h>
 #include <pw_thread/thread.h>
-#include <pw_thread_zephyr/config.h>
+// #include <pw_thread_zephyr/config.h>
 #include <pw_thread_zephyr/context.h>
 #include <pw_thread_zephyr/options.h>
 
 #include <variant>
 #include <tuple>
 
-pw::thread::zephyr::StaticContextWithStack<1024> threadContext;    // TODO define stackSize in kconfig
+// pw::thread::zephyr::StaticContextWithStack<1024> threadContext;    // TODO define stackSize in kconfig
+pw::thread::backend::NativeContextWithStack<1024> threadContext;    // TODO define stackSize in kconfig
 
 template <typename, typename, typename>
 class AppLauncher;
@@ -38,8 +39,9 @@ class AppLauncher<std::tuple<APP_Ts...>, DISPLAY_T, PROVIDER_MANAGER_T> {
 
     void run() noexcept
     {
-        static constexpr auto options =
-            pw::thread::zephyr::Options(threadContext).set_priority(pw::thread::zephyr::config::kDefaultPriority);
+        const auto options = pw::thread::backend::NativeOptions(threadContext)
+                                 .set_priority(pw::thread::backend::kDefaultPriority)
+                                 .set_stack(threadContext.stack());
 
         pw::thread::Thread thread(options, [this]() {
             while (1) {
