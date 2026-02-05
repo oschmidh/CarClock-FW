@@ -16,15 +16,16 @@ manifest:
   projects:
     - name: zephyr
       remote: zephyrproject-rtos
-      revision: v4.0.0
+      revision: v4.3.0
       import:
         name-allowlist:
-          - cmsis
+          - cmsis_6
           - hal_stm32
+          - hal_espressif
 
     - name: pigweed
       remote: pigweed
-      revision: main
+      revision: 0a9a5b62d90ae06303257b0e621456f72d5305d3
       path: modules/pigweed
 
     - name: mdspan
