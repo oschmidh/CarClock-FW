@@ -4,20 +4,30 @@ import re
 
 
 # with open(, "rb") as file:
-img = Image.open("CarClock-FW/timeFont.bmp")
+img = Image.open("CarClock-FW/resources/fonts/timeFont.bmp")
 
 
-start_char = "0"
-end_char = "9"
+start_char = "/"
+end_char = ":"
 kerning = 2
 color_depth_bits = 4
 
 # horizontal address mode:
 # for pixel in list(img.getdata()):
 
-# print(img.getcolors())
+# print(img.info)
 
 raw = list(img.getdata())
+
+
+def invert(x):
+    if x:
+        return 0
+    else:
+        return 1
+
+
+# raw = [invert(x) for x in raw]  # invert
 # print(raw)
 
 
