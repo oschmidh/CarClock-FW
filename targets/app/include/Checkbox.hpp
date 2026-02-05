@@ -2,18 +2,27 @@
 #define CARCLOCK_FW_TARGETS_APP_INCLUDE_CHECKBOX_HPP
 
 #include "Primitives.hpp"
-#include "Label.hpp"
+#include "Textbox.hpp"
 
-class Checkbox {
+class Checkbox {    // TODO is rather a button than a checkbox...
   public:
     struct Config {
-        Label::HzAlignment hzAlignment = Label::HzAlignment::Left;
-        Label::VtAlignment vtAlignment = Label::VtAlignment::Top;
-        Label::Frame frame = Label::Frame::None;
+        // Label::HzAlignment hzAlignment = Label::HzAlignment::Left;
+        // Label::VtAlignment vtAlignment = Label::VtAlignment::Top;
+        Textbox::Frame frame = Textbox::Frame::None;
     };
 
-    constexpr Checkbox(auto& display, Point pos, Font font, Config cfg = {}) noexcept
-     : _label(pos, font, {.hzAlignment = cfg.hzAlignment, .frame = cfg.frame, .invert = false})
+    // constexpr Checkbox(Point pos, Font font, Config cfg = {}) noexcept
+    //  : _label(pos, font,
+    //           {.hzAlignment = cfg.hzAlignment, .vtAlignment = cfg.vtAlignment, .frame = cfg.frame, .invert = false})
+    // { }
+
+    constexpr Checkbox(Point pos, Font font, Config cfg, Widget::Alignment align = {}) noexcept
+     : _label(pos, font, {.frame = cfg.frame, .invert = false}, align)
+    { }
+
+    constexpr Checkbox(Point pos, Font font, Widget::Alignment align = {}) noexcept
+     : _label(pos, font, {.invert = false}, align)
     { }
 
     void draw(auto& display) noexcept
@@ -24,11 +33,12 @@ class Checkbox {
 
     constexpr void setPos(Point pos) noexcept { _label.setPos(pos); }
     constexpr void setText(std::string_view text) noexcept { _label.setText(text); }
+    constexpr void resize(unsigned int width, unsigned int height) noexcept { _label.resize(width, height); }
     constexpr void setChecked(bool state) noexcept { _checked = state; }
     constexpr bool isChecked() const noexcept { return _checked; }
 
   private:
-    Label _label;
+    Textbox _label;
     bool _checked{};
 };
 
