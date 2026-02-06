@@ -5,13 +5,13 @@
 
 #include <algorithm>
 
-template <char BEGIN_V, char END_V, unsigned int WIDTH_V, unsigned int HEIGHT_V, unsigned int COLOR_DEPTH_V = 1>
+template <char BEGIN_V, char END_V, int WIDTH_V, int HEIGHT_V, int COLOR_DEPTH_V = 1>
 struct FontDefinition {
     static constexpr char firstChar = BEGIN_V;
     static constexpr char lastChar = END_V;
-    static constexpr unsigned int width = WIDTH_V;
-    static constexpr unsigned int height = HEIGHT_V;
-    const unsigned int kerning;
+    static constexpr int width = WIDTH_V;
+    static constexpr int height = HEIGHT_V;
+    const int kerning;
     const std::array<Bitmap<width, height, COLOR_DEPTH_V>, lastChar - firstChar + 1> chars;
 
     constexpr const Bitmap<width, height, COLOR_DEPTH_V>& getBitmap(char c) const noexcept

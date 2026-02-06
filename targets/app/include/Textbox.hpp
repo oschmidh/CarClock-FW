@@ -13,8 +13,8 @@ static constexpr Bitmap<4, 4, 4> frameCornerBotLeft{0xf0, 0x00, 0xf0, 0x00, 0xff
 static constexpr Bitmap<4, 4, 4> frameCornerBotRight{0x00, 0xf0, 0x00, 0xf0, 0xff, 0xf0};
 
 class Textbox : public Widget {
-    static constexpr unsigned int sideOffset = 6;
-    static constexpr unsigned int topOffset = 2;
+    static constexpr int sideOffset = 6;
+    static constexpr int topOffset = 2;
 
   public:
     // enum class HzAlignment { Left, Right, Center };
@@ -109,7 +109,7 @@ class Textbox : public Widget {
     // }
 
   private:
-    constexpr unsigned int boxWidth() const noexcept
+    constexpr int boxWidth() const noexcept
     {
         const auto textwidth = _text.size() ? _text.size() * (_font.width + _font.kerning) - _font.kerning : 0;
         if (_cfg.frame == Frame::None) {
@@ -118,7 +118,7 @@ class Textbox : public Widget {
         return textwidth + 2 * sideOffset;
     }
 
-    constexpr unsigned int boxHeight() const noexcept
+    constexpr int boxHeight() const noexcept
     {
         if (_cfg.frame == Frame::None) {
             return _font.height;

@@ -5,16 +5,16 @@
 #include <zephyr/devicetree.h>
 
 struct Time {
-    unsigned int hours{};
-    unsigned int minutes{};
-    unsigned int seconds{};
+    int hours{};
+    int minutes{};
+    int seconds{};
 };
 
 struct Date {
-    unsigned int wday = 1;    // TODO??
-    unsigned int day = 1;
-    unsigned int month = 1;
-    unsigned int year = 1970;
+    int wday = 1;    // TODO??
+    int day = 1;
+    int month = 1;
+    int year = 1970;
 };
 
 class TimeProvider {

@@ -118,8 +118,8 @@ class ScrollingList {
         // TODO assert? should never happen
     }
 
-    unsigned int _width{};
-    unsigned int _height{};
+    int _width{};
+    int _height{};
     unsigned int _selIndex{};
     unsigned int _scrlIndex{};
     Point _pos;

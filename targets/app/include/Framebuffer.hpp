@@ -42,7 +42,7 @@ class Framebuffer {
         }
     }
 
-    void draw(const Line& line, unsigned int thickness) noexcept
+    void draw(const Line& line, int thickness) noexcept
     {
         // TODO implement thickness
 
@@ -77,23 +77,21 @@ class Framebuffer {
     void draw(const Point& point) noexcept
     {
         const std::uint8_t mask = 1 << point.y % 8u;
-        const unsigned int idx = point.y / 8 * WIDTH_V + point.x;
+        const int idx = point.y / 8 * WIDTH_V + point.x;
         _buf[idx] |= mask;
     }
 
-    void drawHLine(const Point& begin, unsigned int length, unsigned int thickness = 1,
-                   std::uint8_t color = 0xf) noexcept
+    void drawHLine(const Point& begin, int length, int thickness = 1, std::uint8_t color = 0xf) noexcept
     {
-        for (unsigned int i = 0; i < thickness; ++i) {
+        for (int i = 0; i < thickness; ++i) {
             _drawHLine({begin.x, begin.y + i}, length, color);
         }
     }
 
-    void drawVLine(const Point& begin, unsigned int length, unsigned int thickness = 1,
-                   std::uint8_t color = 0xf) noexcept
+    void drawVLine(const Point& begin, int length, int thickness = 1, std::uint8_t color = 0xf) noexcept
     {
         // TODO ensure color is <= 15
-        const unsigned int horizBitOffset = begin.x % pxPerByte;
+        const int horizBitOffset = begin.x % pxPerByte;
 
         Point pos = {begin.x, begin.y};
         if (horizBitOffset) {
@@ -103,7 +101,7 @@ class Framebuffer {
             ++pos.x;
         }
 
-        for (unsigned int x = 1; x < thickness; x += pxPerByte) {
+        for (int x = 1; x < thickness; x += pxPerByte) {
             const std::uint8_t mask = (color << 4u) | color;
             _drawVLineMasked({pos.x + x, pos.y}, length, mask);
         }
@@ -137,7 +135,7 @@ class Framebuffer {
 
         const unsigned int horizBitOffset = pos.x % pxPerByte;
 
-        for (unsigned int y = 0; y < bmp.height; ++y) {
+        for (int y = 0; y < bmp.height; ++y) {
 
             if (!horizBitOffset) {
                 // fast algorithm for positions aligned to full byte boundaries
@@ -184,9 +182,9 @@ class Framebuffer {
 
     void invert(const Rectangle& area) noexcept
     {
-        const unsigned int horizBitOffset = area.begin.x % pxPerByte;
+        const int horizBitOffset = area.begin.x % pxPerByte;
 
-        for (unsigned int y = 0; y < area.height; ++y) {
+        for (int y = 0; y < area.height; ++y) {
             auto pos = area.begin + Point{0, y};
 
             if (horizBitOffset) {
@@ -208,9 +206,9 @@ class Framebuffer {
 
     void clear(const Rectangle& area) noexcept
     {
-        const unsigned int horizBitOffset = area.begin.x % pxPerByte;
+        const int horizBitOffset = area.begin.x % pxPerByte;
 
-        for (unsigned int y = 0; y < area.height; ++y) {
+        for (int y = 0; y < area.height; ++y) {
             auto pos = area.begin + Point{0, y};
 
             if (horizBitOffset) {
@@ -229,7 +227,7 @@ class Framebuffer {
     }
 
   private:
-    void _drawHLine(const Point& begin, unsigned int length, std::uint8_t color) noexcept
+    void _drawHLine(const Point& begin, int length, std::uint8_t color) noexcept
     {
         // TODO ensure color is <= 15
 
@@ -250,9 +248,9 @@ class Framebuffer {
         }
     }
 
-    void _drawVLineMasked(const Point& begin, unsigned int length, std::uint8_t mask) noexcept
+    void _drawVLineMasked(const Point& begin, int length, std::uint8_t mask) noexcept
     {
-        for (unsigned int y = 0; y < length; ++y) {
+        for (int y = 0; y < length; ++y) {
             _buf[begin.y + y, begin.x / pxPerByte] |= mask;
         }
     }
