@@ -20,6 +20,17 @@ color_depth_bits = 4
 raw = list(img.getdata())
 
 
+if max(raw) > 15:
+    multiplier = 1  # TODO better name
+    divisor = 16  # TODO better name
+elif max(raw) > 15:
+    multiplier = 1
+    divisor = 1
+else:
+    multiplier = 15
+    divisor = 1
+
+
 def invert(x):
     if x:
         return 0
@@ -32,10 +43,10 @@ def invert(x):
 
 
 def merge(a, b):
-    a = a * 15
-    b = b * 15
-    return a * 16 + b
-    # ret = a // 16 * 16 + b // 16
+    a = a * multiplier
+    b = b * multiplier
+    # return a * 16 + b
+    return a // divisor * 16 + b // divisor
     # print(f"merging {a} and {b} (={hex(ret)})")
     # return ret
 
