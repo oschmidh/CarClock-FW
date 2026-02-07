@@ -1,7 +1,7 @@
 from PIL import Image
 from pathlib import Path
 import re
-
+from bmp_utils import img_to_arr, merge
 
 # with open(, "rb") as file:
 img = Image.open("CarClock-FW/resources/images/homeScreenBackground.bmp")
@@ -19,7 +19,7 @@ color_depth_bits = 4
 
 print(img.info)
 
-raw = list(img.getdata())
+raw = img_to_arr(img)
 print(f"len{len(raw)}")
 print(f"img.w*h{img.width * img.height}")
 print(f"img.width{img.width }")
@@ -28,19 +28,11 @@ print(f"img.height{ img.height}")
 
 print(img.info["compression"])
 # if img.info == 1:
-raw = [i // 16 for i in raw]
 
 # print(len(raw[3::4]))
 # print(raw)
 # pixel = raw[0]
 # print(pixel)
-
-
-def merge(a, b):
-    return a * 16 + b
-    # ret = a // 16 * 16 + b // 16
-    # print(f"merging {a} and {b} (={hex(ret)})")
-    # return ret
 
 
 # merged = [merge(x[0], x[1]) for x in zip(raw[3::8], raw[7::8])]

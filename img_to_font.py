@@ -1,15 +1,16 @@
 from PIL import Image
 from pathlib import Path
 import re
+from bmp_utils import img_to_arr, merge
 
 
 # with open(, "rb") as file:
-img = Image.open("CarClock-FW/resources/fonts/timeFont.bmp")
+img = Image.open("CarClock-FW/resources/fonts/smallNumbers.bmp")
 
 
-start_char = "/"
-end_char = ":"
-kerning = 2
+start_char = "*"
+end_char = "<"
+kerning = 1
 color_depth_bits = 4
 
 # horizontal address mode:
@@ -17,19 +18,7 @@ color_depth_bits = 4
 
 # print(img.info)
 
-raw = list(img.getdata())
-
-
-if max(raw) > 15:
-    multiplier = 1  # TODO better name
-    divisor = 16  # TODO better name
-elif max(raw) > 15:
-    multiplier = 1
-    divisor = 1
-else:
-    multiplier = 15
-    divisor = 1
-
+raw = img_to_arr(img)
 
 def invert(x):
     if x:
@@ -40,15 +29,6 @@ def invert(x):
 
 # raw = [invert(x) for x in raw]  # invert
 # print(raw)
-
-
-def merge(a, b):
-    a = a * multiplier
-    b = b * multiplier
-    # return a * 16 + b
-    return a // divisor * 16 + b // divisor
-    # print(f"merging {a} and {b} (={hex(ret)})")
-    # return ret
 
 
 num_chars = ord(end_char) - ord(start_char) + 1
