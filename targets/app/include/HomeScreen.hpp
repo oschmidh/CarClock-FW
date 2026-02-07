@@ -9,6 +9,7 @@
 
 #include "AppBase.hpp"
 #include "TimeProvider.hpp"
+#include "TemperatureProvider.hpp"
 #include "Textbox.hpp"
 #include "ProgressBar.hpp"
 #include "Textbox.hpp"
@@ -54,27 +55,31 @@ static constexpr auto timeStringPos = Point(158, 16);
 static constexpr auto weekdayPos = Point(149, 59);
 static constexpr auto dateIconPos = Point(192, 2);
 static constexpr auto dateStringPos = dateIconPos + Point(15, 0);
-static constexpr auto timezonePos = Point(228, 59);
+static constexpr auto timezonePos = Point(227, 59);
+static constexpr auto tempInsidePos = Point(15, 31);
+static constexpr auto tempOutsidePos = tempInsidePos + Point(0, 11);
+
 static constexpr auto mitsubishiTextPos = Point(0, 0);
 
 // colors from 0-15
-static constexpr auto dimmedColor = 8;    // TODO find better name
+// static constexpr auto dimmedColor = 8;    // TODO find better name
 
 namespace App {
 
 class HomeScreen : public AppBase {
   public:
     HomeScreen([[maybe_unused]] auto& display, [[maybe_unused]] const auto& providers) noexcept
-     : HomeScreen(display, providers.template get<TimeProvider>())
+     : HomeScreen(display, providers.template get<TimeProvider>(), providers.template get<TemperatureProvider>())
     { }
 
-    HomeScreen(auto& display, const TimeProvider& time) noexcept
+    HomeScreen(auto& display, const TimeProvider& time, const TemperatureProvider& temp) noexcept
      //  : _bar(display, {5, 56}, 100, 13)
      //  , _tBox(display, Font::MiniFont, {5, 0}, 100)
      : /*_weekdayLabel(smallText, weekdayPos,
                      {.hzAlignment = Textbox::HzAlignment::Center, .frame = Textbox::Frame::Corners})
      , */
      _time(time)
+     , _temp(temp)
     {
 
         display.draw(homeScreenBackground, {0, 0});
@@ -127,7 +132,7 @@ class HomeScreen : public AppBase {
         std::array<char, 11> dateStr{};
         std::snprintf(dateStr.data(), dateStr.size(), "%02d.%02d.%04d", date.day, date.month, date.year + 1900);
         // display.draw(dateStr, dateStringPos, smallNumbers);
-        display.draw(std::string_view{dateStr}, dateStringPos, smallNumbers);
+        display.draw(std::string_view{dateStr.data()}, dateStringPos, smallNumbers);
     }
 
     ~HomeScreen() noexcept { }
@@ -149,6 +154,24 @@ class HomeScreen : public AppBase {
         // printk("run (%s)\n", timeString.data());
 
         // TODO print temperature
+
+        const auto displayTemp = [&display](std::expected<int, int> temp, Textbox& label) noexcept {
+            if (temp.has_value()) {
+                std::array<char, 7> buf{};
+                // '°' is mapped to ';' and 'C' is mapped to '<':
+                std::snprintf(buf.data(), buf.size(), "%02d.%01d;<", temp.value() / 10, std::abs(temp.value() % 10));
+                label.setText(std::string_view{buf.data()});
+            } else {
+                // ' ' is mapped to '*':
+                label.setText("*---");
+            }
+
+            label.draw(display);
+        };
+
+        displayTemp(_temp.get(TemperatureProvider::Sensors::Inside), _tempInsideLabel);    // TODO test negative temps
+        displayTemp(_temp.get(TemperatureProvider::Sensors::Outside), _tempOutsideLabel);
+
         // _bar.increment(display);
 
         // static int i;
@@ -189,8 +212,17 @@ class HomeScreen : public AppBase {
                            smallText,
                            {.frame = Textbox::Frame::None, .invert = false},
                            {.hz = Widget::HzAlignment::Left, .vt = Widget::VtAlignment::Top}};
+    Textbox _tempInsideLabel{tempInsidePos,
+                             smallNumbers,
+                             {.frame = Textbox::Frame::None, .invert = false},
+                             {.hz = Widget::HzAlignment::Left, .vt = Widget::VtAlignment::Top}};
+    Textbox _tempOutsideLabel{tempOutsidePos,
+                              smallNumbers,
+                              {.frame = Textbox::Frame::None, .invert = false},
+                              {.hz = Widget::HzAlignment::Left, .vt = Widget::VtAlignment::Top}};
     bool _colonBlink = true;
     const TimeProvider& _time;
+    const TemperatureProvider& _temp;
 };
 
 }    // namespace App
