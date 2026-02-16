@@ -42,7 +42,7 @@ class Framebuffer {
         }
     }
 
-    void draw(const Line& line, int thickness) noexcept
+    void draw(const Line& line, int thickness, std::uint8_t color = 0xf) noexcept
     {
         // TODO implement thickness
 
@@ -56,7 +56,7 @@ class Framebuffer {
         int err = dx + dy;
 
         while (1) {
-            draw(p);
+            draw(p, color);
             if (p == line.end) {
                 return;
             }
@@ -74,11 +74,12 @@ class Framebuffer {
         }
     }
 
-    void draw(const Point& point) noexcept
+    void draw(const Point& point, std::uint8_t color = 0xf) noexcept
     {
-        const std::uint8_t mask = 1 << point.y % 8u;
-        const int idx = point.y / 8 * WIDTH_V + point.x;
-        _buf[idx] |= mask;
+        const int xShift = 8 / pxPerByte * (1 - point.x % pxPerByte);
+
+        _buf[point.y, point.x / pxPerByte] &= ~(0xf << xShift);
+        _buf[point.y, point.x / pxPerByte] |= (color << xShift);
     }
 
     void drawHLine(const Point& begin, int length, int thickness = 1, std::uint8_t color = 0xf) noexcept
